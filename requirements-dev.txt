@@ -1,0 +1,11 @@
+-r requirements.txt
+
+# tests
+pytest>=7.0
+
+# lint
+ruff>=0.5
+
+# packaging / release
+build>=1.0
+twine>=5.0

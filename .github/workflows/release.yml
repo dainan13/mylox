@@ -1,0 +1,119 @@
+name: release
+
+# Push a tag to publish:  git tag v0.1.0 && git push origin v0.1.0
+#
+# The PyPI upload uses Trusted Publishing (OIDC) - there is no API token in this
+# repository.  The PyPI "pending publisher" for this project is registered as:
+#
+#   project      mylox
+#   publisher    GitHub
+#   repository   dainan13/mylox
+#   workflow     release.yml      <- this file name
+#   environment  pypi             <- the job's environment below
+#
+# Changing any of the four values above requires updating PyPI as well.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify (lint + unit tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the package with dev extras
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Lint
+        run: ruff check
+
+      - name: Unit tests
+        run: pytest test -q --ignore=test/test_integration.py
+
+  build:
+    name: Build distribution
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: python -m pip install --upgrade build twine
+
+      - name: Build a binary wheel and a source tarball
+        run: python -m build
+
+      - name: Check the metadata (what PyPI will accept)
+        run: python -m twine check --strict dist/*
+
+      - name: Show what is inside the distributions
+        run: |
+          python -m zipfile -l dist/*.whl
+          tar tzf dist/*.tar.gz
+
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+          if-no-files-found: error
+
+  github-release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+
+  publish-to-pypi:
+    name: Publish to PyPI
+    needs: github-release
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/mylox/
+    permissions:
+      id-token: write # OIDC token for Trusted Publishing
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

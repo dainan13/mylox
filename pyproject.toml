@@ -1,0 +1,87 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mylox"
+version = "0.8.0"
+description = "MySQL binlog to PostgreSQL CDC engine with multi-pipeline fan-out and shadow-free schema tracking"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "dainan13" }]
+keywords = [
+    "cdc",
+    "change-data-capture",
+    "mysql",
+    "binlog",
+    "postgresql",
+    "replication",
+    "etl",
+    "sqlglot",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Database",
+    "Topic :: Database :: Database Engines/Servers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = [
+    "PyMySQL>=1.0",
+    "mysql-replication>=1.0",
+    "psycopg[binary]>=3.1",
+    "sqlglot>=20.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7.0"]
+dev = ["pytest>=7.0", "ruff>=0.5", "build>=1.0", "twine>=5.0"]
+
+[project.urls]
+Homepage = "https://github.com/dainan13/mylox"
+Repository = "https://github.com/dainan13/mylox"
+Issues = "https://github.com/dainan13/mylox/issues"
+Changelog = "https://github.com/dainan13/mylox/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/dainan13/mylox/blob/main/docs/architecture.md"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["mylox*"]
+
+[tool.setuptools.package-data]
+mylox = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+addopts = "-ra"
+markers = [
+    "integration: requires a live MySQL replica and a PostgreSQL database",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+src = ["src", "test", "example"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "I"]
+ignore = [
+    "E501",  # long lines are handled by the formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Optional hooks of the handler base class are deliberately empty.
+"src/mylox/engine/handler.py" = ["B027"]

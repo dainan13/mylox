@@ -1,0 +1,19 @@
+# Files that go into the source distribution (the wheel is built from src/).
+include LICENSE
+include README.md
+include CHANGELOG.md
+include CONTRIBUTING.md
+include pyproject.toml
+include requirements.txt
+include requirements-dev.txt
+
+recursive-include src/mylox *.py py.typed
+recursive-include test *.py
+recursive-include example *.py
+recursive-include docs *.md
+
+prune dist
+prune build
+prune .venv
+prune .github
+global-exclude __pycache__ *.py[cod] *.egg-info .DS_Store
